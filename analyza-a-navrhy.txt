@@ -1,0 +1,140 @@
+=== AUTOFOLIEWRAP.CZ - Analyza a navrhy na zlepseni ===
+Datum: 27.7.2026
+
+====================
+SOUCASNY STAV WEBU
+====================
+
+Web: autofoliewrap.cz (WordPress)
+Typ: Autofoliarske sluzby (tonovanie, polepy, ochrana laku, reklama)
+
+Struktura:
+- Hero sekce s carouselom
+- Sluzby (tonovanie skiel a svetiel, celopolepy, reklamne polepy, ochrana laku)
+- O nas
+- Ako to funguje (4 kroky)
+- PPF ochrana
+- Preco my (vyhody)
+- Galerie
+- Cisla (roky, pobocky, zakazky)
+- Reference (Google recenzie)
+- Kontakt
+- Footer
+
+====================
+CHYBY (treba opravit)
+====================
+
+1. jQuery Error
+   - V konzole: "jQuery is not defined"
+   - Je referencovany skript, ktory pouziva jQuery, ale jQuery nie je nalinkovane
+   - OPRAVA: Pridat <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> pred skripty
+
+2. Chybajuci favicon
+   - Browser tab je prazdny
+   - OPRAVA: Pridat <link rel="icon" type="image/svg+xml" href="favicon.svg"> alebo .png
+
+3. Chybajuce meta tagy pre SEO
+   - Chyba meta description, Open Graph tagy (Facebook, Twitter)
+   - Chyba structured data (schema.org)
+   - OPRAVA: Pridat meta description, OG:title, OG:description, OG:image
+
+4. Pomalé nacitanie
+   - Velke obrazky bez kompresie (428KB HTML + obrazky)
+   - OPRAVA: Pouzit WebP format, lazy loading, kompresiu obrazkov
+
+5. Chybajuca mobilna optimalizacia
+   - Je tam viewport meta tag, ale design nie je plne responzivny
+   - OPRAVA: Media queries pre mobile, vacsie touch targety
+
+6. Chybajuce SSL/HTTPS presmerovanie (alebo je?)
+   - Nutne skontrolovat ci vsetky zdroja nacitavaju cez HTTPS
+
+====================
+VIZUALNE A UX ZLEPSENIA
+====================
+
+7. Video pozadie v hero sekcii
+   - Natocit 10-15s video: detail nalepovania folie, lesk po dokonceni
+   - Zdroja: Pexels.com (free stock videa "car wrap", "car detailing")
+   - Implementacia cez <video> s object-fit:cover a parallax efekt
+
+8. Parallax scroll efekt
+   - Obrazky v pozadi sa pohybuju pomalsie nez text
+   - Jednoduche CSS: background-attachment: fixed
+
+9. Scroll animacie (AOS.js)
+   - Sluzby, cisla, reference sa "najazdia" pri scrollovani
+   - Staci pridat CDN: <script src="https://unpkg.com/aos@2.3.1/dist/aos.js">
+   - A data-aos="fade-up" atributy k elementom
+
+10. Before/After image slider
+    - Umožní zákazníkom potiahnutím porovnať auto pred a po nalepení
+    - Knižnica: before-after.js alebo ImageComparison
+
+11. Online cennik a kalkulacka
+    - Namiesto samostatnej stranky cenik integrovat rovno do webu
+    - Vyberies sluzbu + typ auta + velkost = odhad ceny
+
+12. Live chat / WhatsApp button
+    - Rýchla otazka bez formulara
+    - Sticky button v pravom dolnom rohu
+
+13. Online rezervacny system
+    - Vyberies termin, sluzbu, nechas zalohu
+    - Moznost cez Google Calendar API alebo SimpleBooking
+
+14. Statistiky pocitadlo (anime)
+    - Cisla (12 let, 1 pobocka, 500+ zakazek) animovane nastupuju
+    - Pouzit Intersection Observer API alebo CountUp.js
+
+15. Sticky navigacia
+    - Po scrollovani header ostava hore
+    - Uz je implementovana? Treba overit
+
+====================
+TECHNICKE DOPORUCENIA
+====================
+
+16. Presun na staticky hosting (Vercel / Netlify)
+    - WordPress je zbytocne tazky na jednoduchy web
+    - Staticka verzia by sa nacitavala o 60-80% rychlejsie
+
+17. Performance optimalizacia
+    - Google Lighthouse audit
+    - Minimalizovat CSS/JS
+    - Pouzit CDN na obrazky
+    - Implementovat lazy loading
+
+18. Pridat Google Analytics / SEO
+    - Sledovanie konverzii (kto klikol na "Objednat")
+    - Google Search Console
+
+====================
+ZDROJE PRE VIDEO POZADIE
+====================
+
+- Pexels.com - free stock videa (car wash, detailing) - ZDARMA
+- Coverr.co - free stock videa - ZDARMA
+- Vlastne natocene - NAJLEPSIE (originalita)
+- LottieFiles.com - JSON animacie - ZDARMA
+
+====================
+IMPLEMENTACNE PRIORITY
+====================
+
+Phase 1 (rychle opravy):
+  1. Opravit jQuery error
+  2. Pridat favicon
+  3. Pridat meta tagy pre SEO
+  4. Opravit responzivitu
+
+Phase 2 (vylepsenia):
+  5. Pridat AOS.js scroll animacie
+  6. Before/after slider do galerie
+  7. WhatsApp button
+
+Phase 3 (velke veci):
+  8. Video pozadie v hero
+  9. Online kalkulacka cien
+  10. Online rezervacny system
