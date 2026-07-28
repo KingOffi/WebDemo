@@ -65,6 +65,47 @@
     </div>
   </section>
 
+  <!-- ===== CAR WRAPPING SCROLL EFFECT (Canvas + GSAP) ===== -->
+  <section class="scroll-section" id="scrollEffect">
+    <!-- Loading overlay: blocks interaction until frames are ready -->
+    <div class="scroll-loading" id="scrollLoading">
+      <div class="scroll-loading__inner">
+        <div class="scroll-loading__ring"></div>
+        <div class="scroll-loading__text">
+          <span class="scroll-loading__label">Načítání</span>
+          <span class="scroll-loading__percent" id="loadingPercent">0%</span>
+        </div>
+        <div class="scroll-loading__bar">
+          <div class="scroll-loading__bar-fill" id="loadingBarFill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll spacer to create scroll distance -->
+    <div class="scroll-container" id="scrollContainer">
+      <!-- Sticky frame keeps the canvas pinned in viewport -->
+      <div class="scroll-frame" id="scrollFrame">
+        <canvas id="scrollCanvas"></canvas>
+
+        <!-- Overlay text that fades based on scroll progress -->
+        <div class="scroll-overlay" id="scrollOverlay">
+          <div class="scroll-overlay__content">
+            <span class="scroll-overlay__pre">sledujte proměnu</span>
+            <h2 class="scroll-overlay__title">Každý detail<br /><span>se počítá</span></h2>
+            <p class="scroll-overlay__desc">
+              Profesionální aplikace fólie vyžaduje preciznost, zkušenosti a vášeň.<br />
+              Podívejte se, jak vzniká dokonalý celopolep.
+            </p>
+            <div class="scroll-overlay__progress" id="scrollProgress">
+              <span class="scroll-overlay__pct" id="scrollPct">0%</span>
+              <span class="scroll-overlay__hint">Protáhněte</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== SLUŽBY ===== -->
   <section class="services section" id="sluzby">
     <div class="container">
@@ -491,6 +532,16 @@
     <i class="fas fa-chevron-up"></i>
   </button>
 
+  <!-- GSAP + ScrollTrigger (ES modules via CDN) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm",
+      "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js"
+    }
+  }
+  </script>
+  <script type="module" src="js/scroll-effect.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
