@@ -14,7 +14,6 @@
 }
 
 html {
-  scroll-behavior: smooth;
   scroll-padding-top: 80px;
 }
 
@@ -1372,5 +1371,249 @@ ul {
 
   .stats__num {
     font-size: 3rem;
+  }
+}
+
+/* ============================================
+   CAR WRAPPING SCROLL EFFECT
+   Canvas-driven scroll animation with GSAP
+   ============================================ */
+
+/* --- SCROLL SECTION --- */
+.scroll-section {
+  position: relative;
+  background: #fff; /* match page background — scroll-frame is independently dark */
+}
+
+/* --- SCROLL CONTAINER (spacer) --- */
+.scroll-container {
+  height: 200vh; /* 200% viewport height → enough room for sticky + scrub */
+  position: relative;
+}
+
+/* --- STICKY FRAME (canvas viewport) --- */
+.scroll-frame {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh; /* full viewport height */
+  overflow: hidden;
+  background: #0d0d0d;
+}
+
+/* --- CANVAS --- */
+#scrollCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* --- OVERLAY TEXT --- */
+.scroll-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.scroll-overlay__content {
+  text-align: center;
+  color: #fff;
+  max-width: 700px;
+  padding: 0 24px;
+}
+
+.scroll-overlay__pre {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: #f7a801;
+  margin-bottom: 16px;
+  padding: 6px 18px;
+  border: 1px solid rgba(247, 168, 1, 0.3);
+  border-radius: 50px;
+}
+
+.scroll-overlay__title {
+  font-size: 3.5rem;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.5);
+}
+
+.scroll-overlay__title span {
+  color: #f7a801;
+}
+
+.scroll-overlay__desc {
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.7;
+  margin-bottom: 30px;
+}
+
+.scroll-overlay__progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.scroll-overlay__pct {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f7a801;
+  min-width: 50px;
+  text-align: center;
+}
+
+.scroll-overlay__hint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  padding-left: 20px;
+}
+
+.scroll-overlay__hint::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  animation: scrollHint 2s ease-in-out infinite;
+}
+
+@keyframes scrollHint {
+  0%, 100% { opacity: 0.3; transform: translateY(-50%) scale(1); }
+  50% { opacity: 1; transform: translateY(-50%) scale(1.3); }
+}
+
+/* --- LOADING OVERLAY --- */
+.scroll-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0d0d0d;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+.scroll-loading.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.scroll-loading__inner {
+  text-align: center;
+}
+
+.scroll-loading__ring {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 24px;
+  border: 3px solid rgba(247, 168, 1, 0.1);
+  border-top-color: #f7a801;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.scroll-loading__text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.scroll-loading__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.scroll-loading__percent {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #f7a801;
+}
+
+.scroll-loading__bar {
+  width: 260px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.scroll-loading__bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #f7a801, #ffc34d);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* --- SCROLL EFFECT RESPONSIVE --- */
+@media (max-width: 768px) {
+  .scroll-overlay__title {
+    font-size: 2rem;
+  }
+
+  .scroll-overlay__desc {
+    font-size: 0.9rem;
+  }
+
+  .scroll-overlay__pre {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+  }
+
+  .scroll-loading__bar {
+    width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .scroll-overlay__title {
+    font-size: 1.5rem;
+  }
+
+  .scroll-overlay__desc {
+    font-size: 0.8rem;
+  }
+
+  .scroll-container {
+    height: 150vh; /* less scroll on mobile */
   }
 }
