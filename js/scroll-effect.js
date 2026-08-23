@@ -4,302 +4,248 @@
  * autofoliewrap.cz — Car Wrapping Scroll Effect
  * ============================================
  *
- * Architecture:
- *  1. Async image preloader with silent fallback timeout (6s)
- *  2. Canvas rendering at devicePixelRatio for Retina/HiDPI
- *  3. GSAP ScrollTrigger scrub linking scroll → frame index
- *  4. Dynamic resize handler with object-fit:contain behavior
+ * A scroll-scrubbed frame sequence drawn to a canvas.
  *
- * Frame URL pattern:  /assets/frames/car_${index}.webp   (1‑based, 60 frames)
+ * Design notes
+ * ------------
+ *  1. PROGRESSIVE, NON-BLOCKING LOADING. The section becomes usable as
+ *     soon as the *first* frame has decoded; the remaining frames stream
+ *     in behind it with a small concurrency window. Whatever is not in
+ *     yet falls back to the nearest frame that is, so scrubbing works
+ *     immediately and simply gets smoother as the sequence fills.
+ *
+ *     The previous implementation raced the preload against a 6s timeout
+ *     and then did `await loadPromise` anyway, which cancelled the race
+ *     out — so the overlay actually waited for all 60 frames (6.4 MB)
+ *     with no escape hatch at all.
+ *
+ *  2. RESPONSIVE SOURCES. Narrow viewports get assets/frames/sm/ (854px,
+ *     ~1.4 MB for the sequence) instead of the 1920px set (~6.4 MB).
+ *
+ *  3. REDUCED MOTION. With prefers-reduced-motion the section does not
+ *     pin or scrub at all: it renders one representative still and the
+ *     page scrolls normally past it.
+ *
+ *  4. No GSAP. The importmap that used to sit in index.html pointed at
+ *     gsap + ScrollTrigger but nothing ever imported them, so it loaded
+ *     nothing. Scrubbing is a rAF-throttled native scroll listener.
+ *
+ * Swapping in different footage
+ * -----------------------------
+ *   Drop a video at assets/video/source.mp4 and run `npm run frames`.
+ *   See scripts/generate-frames-from-video.mjs.
  * ============================================
  */
-// ─── DOM References (strictly typed) ──────────────────────────────
+// ─── Configuration ─────────────────────────────────────────────────
+const CONFIG = {
+    totalFrames: 60,
+    framePath: 'assets/frames/',
+    framePathSmall: 'assets/frames/sm/',
+    smallBreakpoint: 900,
+    concurrency: 6,
+    frameExt: 'webp',
+};
+// ─── DOM ───────────────────────────────────────────────────────────
 const canvas = document.getElementById('scrollCanvas');
 const ctx = canvas?.getContext('2d') ?? null;
 const loadingOverlay = document.getElementById('scrollLoading');
 const loadingPercent = document.getElementById('loadingPercent');
 const loadingBarFill = document.getElementById('loadingBarFill');
+const scrollSection = document.getElementById('scrollEffect');
 const scrollContainer = document.getElementById('scrollContainer');
 const scrollFrame = document.getElementById('scrollFrame');
-const scrollOverlay = document.getElementById('scrollOverlay');
 const scrollPct = document.getElementById('scrollPct');
-// ─── Configuration ─────────────────────────────────────────────────
-const CONFIG = {
-    totalFrames: 60, // 60 frames for a smooth 2‑3s scroll animation
-    frameUrlPattern: 'assets/frames/car_', // becomes assets/frames/car_1.webp (relative)
-    timeoutMs: 6000, // 6 seconds before silent drop
-    frameExt: 'webp',
-};
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 // ─── State ─────────────────────────────────────────────────────────
 const state = {
-    frames: [],
+    frames: new Array(CONFIG.totalFrames),
     loadedCount: 0,
-    timedOut: false,
     initialized: false,
     currentFrame: 1,
+    basePath: CONFIG.framePath,
 };
-// ─── Preloader ────────────────────────────────────────────────────
-/**
- * Build the full URL for a given frame index (1‑based).
- * Example:  /assets/frames/car_1.webp
- */
-function buildFrameUrl(index) {
-    return `${CONFIG.frameUrlPattern}${index}.${CONFIG.frameExt}`;
+// ─── Loading ───────────────────────────────────────────────────────
+/** Pick the frame set that suits this viewport. */
+function resolveBasePath() {
+    const narrow = window.innerWidth <= CONFIG.smallBreakpoint;
+    // A data-saver connection gets the small set regardless of width.
+    const conn = navigator.connection;
+    return narrow || conn?.saveData ? CONFIG.framePathSmall : CONFIG.framePath;
 }
-/**
- * Attempt to load a single frame image.
- * Returns a promise that resolves with the loaded image or rejects on error.
- */
-function loadSingleFrame(url) {
+function buildFrameUrl(index) {
+    return `${state.basePath}car_${index}.${CONFIG.frameExt}`;
+}
+function loadSingleFrame(index) {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        // Frames are decorative; let the browser deprioritise them so they
+        // never compete with the hero image or the stylesheet.
+        img.decoding = 'async';
+        if ('fetchPriority' in img) {
+            img.fetchPriority = 'low';
+        }
         img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error(`Failed to load: ${url}`));
-        img.src = url;
+        img.onerror = () => reject(new Error(`Failed to load frame ${index}`));
+        img.src = buildFrameUrl(index);
     });
 }
-/**
- * Asynchronously preload all frame images.
- * Updates the loading bar and percentage in real time.
- *
- * Returns the array of successfully loaded images (may be fewer than totalFrames).
- */
-async function preloadFrames() {
-    const loadedImages = [];
-    const loadPromises = [];
-    for (let i = 1; i <= CONFIG.totalFrames; i++) {
-        const url = buildFrameUrl(i);
-        const promise = loadSingleFrame(url)
-            .then((img) => {
-            loadedImages[i - 1] = img;
-            state.loadedCount++;
-            updateLoadingUI(state.loadedCount, CONFIG.totalFrames);
-        })
-            .catch(() => {
-            // Silently skip failed frames — they'll be handled by the fallback
-            loadedImages[i - 1] = createFallbackFrame(i, CONFIG.totalFrames);
-            state.loadedCount++;
-            updateLoadingUI(state.loadedCount, CONFIG.totalFrames);
-        });
-        loadPromises.push(promise);
-    }
-    // Wait for all load attempts to settle
-    await Promise.allSettled(loadPromises);
-    return loadedImages;
-}
-/**
- * Generate a procedural fallback frame using an offscreen canvas.
- * This creates a coloured abstract visual representing the car‑wrapping process
- * so the animation still works even when real images aren't available.
- */
-function createFallbackFrame(index, total) {
-    const offscreen = document.createElement('canvas');
-    const size = 1920;
-    offscreen.width = size;
-    offscreen.height = 1080;
-    const fctx = offscreen.getContext('2d');
-    const progress = index / total; // 0 → 1
-    // ── Background gradient (dark) ──
-    const bg = fctx.createLinearGradient(0, 0, size, size);
-    bg.addColorStop(0, '#0d0d0d');
-    bg.addColorStop(1, '#1a1a1a');
-    fctx.fillStyle = bg;
-    fctx.fillRect(0, 0, size, size);
-    // ── Car body (simplified silhouette) ──
-    const cx = size / 2;
-    const cy = size / 2;
-    const bodyWidth = 800;
-    const bodyHeight = 300;
-    // Reveal the car from left to right based on progress
-    fctx.save();
-    fctx.beginPath();
-    fctx.rect(0, 0, size * progress, size);
-    fctx.clip();
-    // Car body
-    fctx.fillStyle = '#1b242b';
-    fctx.shadowColor = 'rgba(247, 168, 1, 0.2)';
-    fctx.shadowBlur = 30;
-    // Roof
-    fctx.beginPath();
-    fctx.moveTo(cx - 200, cy - 100);
-    fctx.quadraticCurveTo(cx - 100, cy - 180, cx, cy - 180);
-    fctx.quadraticCurveTo(cx + 100, cy - 180, cx + 200, cy - 100);
-    fctx.lineTo(cx + 350, cy + 50);
-    fctx.lineTo(cx - 350, cy + 50);
-    fctx.closePath();
-    fctx.fill();
-    fctx.strokeStyle = '#f7a801';
-    fctx.lineWidth = 2;
-    fctx.stroke();
-    // Wheels
-    fctx.shadowBlur = 0;
-    fctx.fillStyle = '#2a2a2a';
-    fctx.beginPath();
-    fctx.ellipse(cx - 220, cy + 40, 50, 70, 0, 0, Math.PI * 2);
-    fctx.fill();
-    fctx.beginPath();
-    fctx.ellipse(cx + 220, cy + 40, 50, 70, 0, 0, Math.PI * 2);
-    fctx.fill();
-    // Gold accent line along the car
-    fctx.strokeStyle = '#f7a801';
-    fctx.lineWidth = 3;
-    fctx.shadowColor = '#f7a801';
-    fctx.shadowBlur = 15;
-    fctx.beginPath();
-    fctx.moveTo(cx - 320, cy + 10);
-    fctx.lineTo(cx + 320, cy + 10);
-    fctx.stroke();
-    fctx.restore();
-    // ── Wrapping film overlay (gold shimmer) ──
-    if (progress > 0.3) {
-        const wrapAlpha = Math.min(1, (progress - 0.3) / 0.4);
-        fctx.fillStyle = `rgba(247, 168, 1, ${wrapAlpha * 0.08})`;
-        fctx.fillRect(0, 0, size * progress, size);
-    }
-    // ── Frame number (subtle) ──
-    fctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    fctx.font = '14px monospace';
-    fctx.fillText(`${index}/${total}`, 20, 40);
-    // ── Convert to image ──
-    const img = new Image();
-    img.src = offscreen.toDataURL('image/webp', 0.8);
-    return img;
-}
-// ─── UI Updates ───────────────────────────────────────────────────
-/**
- * Update the loading overlay percentage and progress bar.
- */
-function updateLoadingUI(loaded, total) {
-    const pct = Math.round((loaded / total) * 100);
+function updateLoadingUI() {
+    const pct = Math.round((state.loadedCount / CONFIG.totalFrames) * 100);
     if (loadingPercent)
         loadingPercent.textContent = `${pct}%`;
     if (loadingBarFill)
         loadingBarFill.style.width = `${pct}%`;
 }
-/**
- * Fade out the loading overlay using GSAP.
- */
-function fadeOutLoader() {
+function hideLoader() {
     if (!loadingOverlay)
         return;
-    // Use GSAP for a smooth fade (if GSAP loaded), otherwise CSS fallback
-    try {
-        // Dynamic import to avoid TypeScript errors if GSAP types aren't present
-        // We'll use a simple CSS class fallback — GSAP handles it in the main setup
-        loadingOverlay.classList.add('hidden');
-    }
-    catch {
-        loadingOverlay.style.opacity = '0';
-        loadingOverlay.style.pointerEvents = 'none';
-        loadingOverlay.style.visibility = 'hidden';
-    }
+    loadingOverlay.classList.add('hidden');
+    loadingOverlay.setAttribute('aria-hidden', 'true');
 }
-// ─── Canvas Rendering ─────────────────────────────────────────────
 /**
- * Resize the canvas backing store to match the device pixel ratio
- * while keeping the CSS size at 100% (Retina / HiDPI support).
+ * Record a decoded frame. Repaint if it is the one we currently want, or
+ * if it is closer to the target than whatever is on screen right now.
+ */
+function acceptFrame(index, img) {
+    state.frames[index - 1] = img;
+    state.loadedCount++;
+    updateLoadingUI();
+    if (index === state.currentFrame)
+        drawFrame(state.currentFrame);
+}
+/**
+ * Stream the sequence with a bounded number of parallel requests.
+ * Runs after the first frame is already on screen, so nothing here is
+ * on the critical path.
+ */
+async function streamRemainingFrames() {
+    const queue = [];
+    for (let i = 2; i <= CONFIG.totalFrames; i++)
+        queue.push(i);
+    const worker = async () => {
+        for (;;) {
+            const index = queue.shift();
+            if (index === undefined)
+                return;
+            try {
+                acceptFrame(index, await loadSingleFrame(index));
+            }
+            catch {
+                // A missing frame is not fatal — drawFrame falls back to the
+                // nearest neighbour that did load.
+                state.loadedCount++;
+                updateLoadingUI();
+            }
+        }
+    };
+    const workers = Array.from({ length: Math.min(CONFIG.concurrency, CONFIG.totalFrames - 1) }, worker);
+    await Promise.all(workers);
+}
+/**
+ * Procedural stand-in used only if even the first frame cannot load, so
+ * the section never renders as an empty black box.
+ */
+function createFallbackFrame() {
+    const offscreen = document.createElement('canvas');
+    offscreen.width = 1920;
+    offscreen.height = 1080;
+    const octx = offscreen.getContext('2d');
+    if (octx) {
+        const gradient = octx.createLinearGradient(0, 0, 1920, 1080);
+        gradient.addColorStop(0, '#1a161c');
+        gradient.addColorStop(1, '#3a2226');
+        octx.fillStyle = gradient;
+        octx.fillRect(0, 0, 1920, 1080);
+    }
+    const img = new Image();
+    img.src = offscreen.toDataURL('image/png');
+    return img;
+}
+// ─── Rendering ─────────────────────────────────────────────────────
+/**
+ * Match the canvas backing store to the element's CSS size × DPR.
+ * The transform is set fresh in drawFrame, so this no longer calls
+ * ctx.scale() — doing both compounded the scale on every resize.
  */
 function resizeCanvas() {
-    if (!canvas || !ctx || !scrollFrame)
+    if (!canvas || !scrollFrame)
         return;
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap: 3x costs a lot for no visible gain
     const rect = scrollFrame.getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
-    // Only resize if dimensions actually changed (performance)
-    if (canvas.width === Math.round(w * dpr) && canvas.height === Math.round(h * dpr))
+    const w = Math.round(rect.width * dpr);
+    const h = Math.round(rect.height * dpr);
+    if (canvas.width === w && canvas.height === h)
         return;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
-    ctx.scale(dpr, dpr);
-    // Re-draw current frame after resize
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
     drawFrame(state.currentFrame);
 }
-/**
- * Draw a specific frame (1‑based) onto the canvas.
- * Clears the canvas first, then renders the image with object-fit:contain logic.
- */
+/** Nearest frame that has actually decoded, searching outwards. */
+function nearestLoaded(index) {
+    const exact = state.frames[index - 1];
+    if (exact)
+        return exact;
+    for (let offset = 1; offset < CONFIG.totalFrames; offset++) {
+        const before = state.frames[index - 1 - offset];
+        if (before)
+            return before;
+        const after = state.frames[index - 1 + offset];
+        if (after)
+            return after;
+    }
+    return undefined;
+}
 function drawFrame(frameIndex) {
     if (!canvas || !ctx || !scrollFrame)
         return;
-    const img = state.frames[frameIndex - 1];
+    const img = nearestLoaded(frameIndex);
     if (!img)
         return;
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rect = scrollFrame.getBoundingClientRect();
     const cw = rect.width;
     const ch = rect.height;
-    // Reset transform and clear
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cw, ch);
-    // ── object-fit: contain logic ──
+    // object-fit: cover — the frame is a full-bleed backdrop, so letterbox
+    // bars (what `contain` produced) looked broken on tall phone screens.
     const imgAspect = img.naturalWidth / img.naturalHeight;
     const canvasAspect = cw / ch;
-    let drawW, drawH, dx, dy;
+    let drawW;
+    let drawH;
     if (imgAspect > canvasAspect) {
-        // Image is wider → fit by width
-        drawW = cw;
-        drawH = cw / imgAspect;
-        dx = 0;
-        dy = (ch - drawH) / 2;
-    }
-    else {
-        // Image is taller → fit by height
         drawH = ch;
         drawW = ch * imgAspect;
-        dx = (cw - drawW) / 2;
-        dy = 0;
     }
-    ctx.drawImage(img, dx, dy, drawW, drawH);
-    // Update progress overlay
+    else {
+        drawW = cw;
+        drawH = cw / imgAspect;
+    }
+    ctx.drawImage(img, (cw - drawW) / 2, (ch - drawH) / 2, drawW, drawH);
     if (scrollPct) {
-        const pct = Math.round((frameIndex / CONFIG.totalFrames) * 100);
-        scrollPct.textContent = `${pct}%`;
+        scrollPct.textContent = `${Math.round((frameIndex / CONFIG.totalFrames) * 100)}%`;
     }
 }
-// ─── GSAP ScrollTrigger Setup ────────────────────────────────────
-/**
- * Initialise GSAP ScrollTrigger linking scroll progress → frame index.
- * Uses 'scrub: 0.5' for a slight lerp/smoothing effect.
- */
-async function initScrollTrigger() {
-    if (state.initialized)
+// ─── Scroll scrubbing ──────────────────────────────────────────────
+function initScrubbing() {
+    if (state.initialized || !scrollContainer || !canvas)
         return;
-    if (!scrollContainer || !canvas)
-        return;
-    // Use manual scroll fallback for reliable frame-accurate animation.
-    // GSAP ScrollTrigger was causing sticky positioning conflicts.
-    initManualScrollFallback();
-}
-/**
- * Primary scroll handler — listens to native scroll events and maps them
- * to the correct frame index with requestAnimationFrame for smoothness.
- * The scroll-container's height defines the scroll distance for the animation.
- */
-function initManualScrollFallback() {
-    if (!scrollContainer || !canvas)
-        return;
-    let rafId = null;
+    let queued = false;
     const onScroll = () => {
-        if (rafId !== null)
-            return; // throttle to rAF
-        rafId = requestAnimationFrame(() => {
-            rafId = null;
+        if (queued)
+            return;
+        queued = true;
+        requestAnimationFrame(() => {
+            queued = false;
             const rect = scrollContainer.getBoundingClientRect();
-            // When the container's top is at or above viewport top, start the animation.
-            // The animation plays while the container scrolls through the viewport.
-            // scrollTop: how much of the container has scrolled past the viewport top (>= 0)
-            const scrollTop = Math.max(0, -rect.top);
-            // scrollHeight: total distance the container scrolls through the viewport
-            const scrollHeight = rect.height; // full container height
-            if (scrollHeight <= 0)
+            const distance = rect.height;
+            if (distance <= 0)
                 return;
-            // progress: 0 when container top = viewport top, 1 when container fully scrolled past
-            const progress = Math.min(1, scrollTop / scrollHeight);
-            const rawFrame = progress * (CONFIG.totalFrames - 1) + 1;
-            const frameIndex = Math.min(CONFIG.totalFrames, Math.max(1, Math.round(rawFrame)));
+            const scrolled = Math.max(0, -rect.top);
+            const progress = Math.min(1, scrolled / distance);
+            const frameIndex = Math.min(CONFIG.totalFrames, Math.max(1, Math.round(progress * (CONFIG.totalFrames - 1) + 1)));
             if (frameIndex !== state.currentFrame) {
                 state.currentFrame = frameIndex;
                 drawFrame(frameIndex);
@@ -307,71 +253,107 @@ function initManualScrollFallback() {
         });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', () => drawFrame(state.currentFrame));
     state.initialized = true;
+    onScroll();
 }
-// ─── Resize Handler ───────────────────────────────────────────────
-/**
- * Debounced resize handler to avoid excessive canvas resizes.
- */
-/** Store reference to ScrollTrigger.refresh for resize handler */
-let refreshScrollTrigger = null;
+// ─── Resize ────────────────────────────────────────────────────────
 let resizeTimer = null;
 function handleResize() {
     if (resizeTimer)
         clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
+        // Crossing the breakpoint mid-session should not re-download the
+        // sequence — whichever set is already cached stays in use.
         resizeCanvas();
-        if (refreshScrollTrigger)
-            refreshScrollTrigger();
     }, 150);
 }
-// ─── Boot ─────────────────────────────────────────────────────────
+// ─── Reduced motion ────────────────────────────────────────────────
 /**
- * Main entry point: preload frames, set up canvas, init GSAP,
- * handle the silent fallback timeout, and clean up loader.
+ * Render one representative still and let the page scroll normally.
+ * Marking the section lets the stylesheet un-pin the sticky frame.
  */
-async function main() {
-    // ── 1. Start preloading ──
-    const loadPromise = preloadFrames();
-    // ── 2. Silent timeout race ──
-    const timeoutPromise = new Promise((resolve) => {
-        setTimeout(() => {
-            state.timedOut = true;
-            resolve();
-        }, CONFIG.timeoutMs);
-    });
-    // ── 3. Wait for either load complete or timeout ──
-    await Promise.race([loadPromise, timeoutPromise]);
-    // ── 4. Store whatever frames we have ──
-    const allFrames = await loadPromise;
-    state.frames = allFrames;
-    // ── 5. Fill any gaps with fallback frames ──
-    for (let i = 0; i < CONFIG.totalFrames; i++) {
-        if (!state.frames[i]) {
-            state.frames[i] = createFallbackFrame(i + 1, CONFIG.totalFrames);
-            state.loadedCount++;
-        }
+async function renderStaticStill() {
+    scrollSection?.setAttribute('data-reduced-motion', 'true');
+    const midpoint = Math.round(CONFIG.totalFrames / 2);
+    try {
+        state.frames[midpoint - 1] = await loadSingleFrame(midpoint);
     }
-    // ── 6. Draw first frame immediately ──
+    catch {
+        state.frames[midpoint - 1] = createFallbackFrame();
+    }
+    state.currentFrame = midpoint;
+    state.loadedCount = CONFIG.totalFrames;
+    updateLoadingUI();
     resizeCanvas();
-    drawFrame(1);
-    // ── 7. Silently fade out loader ──
-    fadeOutLoader();
-    // ── 8. Initialise GSAP ScrollTrigger ──
-    await initScrollTrigger();
-    // ── 9. Listen for resize ──
+    drawFrame(midpoint);
+    hideLoader();
     window.addEventListener('resize', handleResize);
 }
-// ─── Start ────────────────────────────────────────────────────────
-// Only boot if the canvas element exists on this page
+// ─── Boot ──────────────────────────────────────────────────────────
+/**
+ * Wait until the section is within roughly 1.5 viewports of the visitor
+ * before touching the network.
+ *
+ * The sequence is ~1.4 MB on mobile. Fetching it at DOMContentLoaded --
+ * even at low priority -- saturated a throttled connection and starved
+ * the hero image, pushing mobile LCP to 6.9s for an animation most
+ * visitors had not scrolled to yet. Deferring it keeps the sequence off
+ * the critical path entirely while still giving it a full viewport and a
+ * half of lead time to decode before it is on screen.
+ */
+function whenSectionApproaches() {
+    return new Promise((resolve) => {
+        if (!scrollSection || !('IntersectionObserver' in window)) {
+            resolve();
+            return;
+        }
+        // Already close enough (deep link, restored scroll position)?
+        const rect = scrollSection.getBoundingClientRect();
+        if (rect.top < window.innerHeight * 2.5) {
+            resolve();
+            return;
+        }
+        const observer = new IntersectionObserver((entries) => {
+            if (!entries.some((entry) => entry.isIntersecting))
+                return;
+            observer.disconnect();
+            resolve();
+        }, { rootMargin: '150% 0px 150% 0px' });
+        observer.observe(scrollSection);
+    });
+}
+async function main() {
+    state.basePath = resolveBasePath();
+    if (prefersReducedMotion.matches) {
+        await whenSectionApproaches();
+        await renderStaticStill();
+        return;
+    }
+    // 1. Hold off until the section is nearly in view.
+    await whenSectionApproaches();
+    // 2. First frame only — this is all the section needs to be usable.
+    try {
+        acceptFrame(1, await loadSingleFrame(1));
+    }
+    catch {
+        state.frames[0] = createFallbackFrame();
+        state.loadedCount = 1;
+    }
+    resizeCanvas();
+    drawFrame(1);
+    // 3. Reveal immediately; the rest streams in behind the visible frame.
+    hideLoader();
+    initScrubbing();
+    window.addEventListener('resize', handleResize);
+    // 4. Background fill. Deliberately not awaited by anything above.
+    void streamRemainingFrames();
+}
 if (canvas && ctx) {
-    // Wait for DOM to be ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => { main(); });
+        document.addEventListener('DOMContentLoaded', () => void main());
     }
     else {
-        main();
+        void main();
     }
 }
 //# sourceMappingURL=scroll-effect.js.map

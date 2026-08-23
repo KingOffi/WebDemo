@@ -1,8 +1,29 @@
 {
   "name": "autofoliewrap",
+  "version": "1.0.0",
   "private": true,
+  "description": "Static site for AutoFolie Wrap s.r.o. — autofólie, tónování autoskel, celopolepy a PPF (Praha)",
   "engines": {
-    "node": "24.x"
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "serve": "serve --listen 8000 .",
+    "dev": "npm run build && npm run serve",
+    "frames": "node scripts/extract-frames.mjs",
+    "verify": "npm run typecheck && npm run lint",
+    "frames:ffmpeg": "node scripts/generate-frames-from-video.mjs",
+    "frames:placeholder": "node scripts/generate-frames.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.10",
+    "serve": "^14.2.6",
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "sharp": "^0.35.3"

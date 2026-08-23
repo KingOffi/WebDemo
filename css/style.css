@@ -1,8 +1,53 @@
 /* ============================================
    AUTOFOLIEWRAP.CZ — Full Stylesheet
-   Colors: #f7a801 (gold), #1b242b (dark), #3b3d42 (text)
-   Font: Raleway, sans-serif
+   ------------------------------------------------
+   All colour, spacing and motion values are design
+   tokens declared in :root below. The brand palette
+   is sampled directly from the client's own logo
+   (assets/img/logo.png): red #c02222 + plum #504552.
+   Changing --c-accent re-themes the whole site.
    ============================================ */
+
+:root {
+  /* ---- Brand (sampled from logo.png) ---- */
+  --c-accent:       #c02222;
+  --c-accent-dark:  #9d1b1b;
+  --c-accent-light: #e04a4a;
+  --c-accent-rgb:   192, 34, 34;
+  /* Brand red is a DARK hue, so on dark surfaces it collapses to ~2.6:1.
+     This lighter tint of the same hue clears 4.5:1 on the header, footer
+     and stats panels and 3:1+ over the hero photo. Used for accent text
+     anywhere the background is dark. */
+  --c-accent-on-dark: #ee5a52;
+  /* Ratings use gold rather than brand red — it is the universal convention
+     for stars, and readers parse it faster than an off-convention colour. */
+  --c-star:       #f2a900;
+  --c-star-empty: #e2ddd8;
+
+  /* ---- Neutrals ---- */
+  --c-dark:         #262029;
+  --c-dark-rgb:     38, 32, 41;
+  --c-darker:       #1a161c;
+  --c-black:        #120f14;
+  --c-heading:      #262029;
+  --c-text:         #4a424c;
+  --c-body:         #5b525d;
+  --c-muted:        #6b626d;
+  --c-muted-light:  #6f6572;
+  --c-bg:           #fff;
+  --c-bg-alt:       #f6f6f7;
+  --c-border:       #e9eaeb;
+  --c-success:      #1f7a3d;
+
+  /* ---- Motion ---- */
+  --dur-fast: 0.2s;
+  --dur:      0.35s;
+  --dur-slow: 0.6s;
+  --ease:     cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* ---- Layout ---- */
+  --header-h: 80px;
+}
 
 /* --- RESET & BASE --- */
 *,
@@ -19,7 +64,7 @@ html {
 
 body {
   font-family: 'Raleway', sans-serif;
-  color: #3b3d42;
+  color: var(--c-text);
   background: #fff;
   line-height: 1.7;
   overflow-x: hidden;
@@ -37,7 +82,8 @@ a {
   transition: color 0.3s ease;
 }
 
-ul {
+ul,
+ol {
   list-style: none;
 }
 
@@ -57,7 +103,7 @@ ul {
   text-transform: uppercase;
   text-align: center;
   margin-bottom: 8px;
-  color: #1b242b;
+  color: var(--c-dark);
 }
 
 .section__title--left {
@@ -66,7 +112,7 @@ ul {
 
 .section__subtitle {
   text-align: center;
-  color: #8d98a1;
+  color: var(--c-muted-light);
   font-size: 1.1rem;
   margin-bottom: 50px;
   font-weight: 400;
@@ -83,14 +129,14 @@ ul {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(27, 36, 43, 0.95);
+  background: rgba(var(--c-dark-rgb), 0.95);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   transition: background 0.3s ease;
 }
 
 .header--scrolled {
-  background: rgba(27, 36, 43, 0.98);
+  background: rgba(var(--c-dark-rgb), 0.98);
 }
 
 .header__inner {
@@ -107,13 +153,19 @@ ul {
   letter-spacing: 0.5px;
 }
 
-.logo span {
-  color: #f7a801;
+/* --- NAV --- */
+/* `.nav` was never given a display value, so the <nav> element stayed
+   block-level and the social icons dropped onto their own line below the
+   links. The 768px breakpoint already sets `flex-direction: column` on it,
+   which only makes sense if it is a flex container to begin with. */
+.nav {
+  display: flex;
+  align-items: center;
 }
 
-/* --- NAV --- */
 .nav__list {
   display: flex;
+  align-items: center;
   gap: 30px;
 }
 
@@ -129,7 +181,7 @@ ul {
 
 .nav__link:hover,
 .nav__link.active {
-  color: #f7a801;
+  color: var(--c-accent);
 }
 
 .nav__link::after {
@@ -139,7 +191,7 @@ ul {
   left: 0;
   width: 0;
   height: 2px;
-  background: #f7a801;
+  background: var(--c-accent);
   transition: width 0.3s ease;
 }
 
@@ -161,7 +213,7 @@ ul {
 }
 
 .nav__social a:hover {
-  color: #f7a801;
+  color: var(--c-accent);
 }
 
 .hamburger {
@@ -201,18 +253,51 @@ ul {
   display: flex;
   align-items: center;
   position: relative;
-  background: #1b242b;
+  background: var(--c-dark);
   overflow: hidden;
   padding-top: 75px;
 }
 
+/* Hero backdrop: the blue Camaro from the original GitHub version, restored
+   by request. It is a stock photo (Unsplash photo-1552519507-da3b142c6e3d),
+   downloaded and served locally rather than hotlinked — the original hotlinked
+   Unsplash, which is why the gallery images were failing to load. Swap
+   assets/img/hero-1920.webp + hero-960.webp to change it; nothing else needs
+   touching. */
 .hero__bg {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(135deg, rgba(27, 36, 43, 0.85) 0%, rgba(27, 36, 43, 0.4) 100%),
-    url('https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1920&q=80') center/cover no-repeat;
+    linear-gradient(135deg, rgba(var(--c-dark-rgb), 0.88) 0%, rgba(var(--c-dark-rgb), 0.55) 100%),
+    image-set(url('../assets/img/hero-1920.webp') 1x) center / cover no-repeat;
+  background-color: var(--c-dark);
   animation: heroZoom 20s ease-in-out infinite alternate;
+}
+
+/* Text scrim. The restored Camaro photo is far brighter than the shot it
+   replaced, which dropped the red headline to 2.37:1 — under the 3:1 that
+   large text needs. This darkens only the left third, where the copy sits,
+   so the car itself stays bright. It is a sibling of the zooming backdrop
+   rather than part of it, so it does not scale with the heroZoom animation. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    rgba(var(--c-dark-rgb), 0.62) 0%,
+    rgba(var(--c-dark-rgb), 0.52) 30%,
+    rgba(var(--c-dark-rgb), 0.2) 52%,
+    rgba(var(--c-dark-rgb), 0) 68%
+  );
+}
+
+/* Content must sit above the scrim */
+.hero__inner {
+  position: relative;
+  z-index: 2;
 }
 
 @keyframes heroZoom {
@@ -244,7 +329,7 @@ ul {
   display: block;
   font-size: 4.5rem;
   font-weight: 900;
-  color: #f7a801;
+  color: var(--c-accent);
   text-transform: uppercase;
   line-height: 1.1;
   text-shadow: 0 2px 20px rgba(0,0,0,0.3);
@@ -270,23 +355,33 @@ ul {
 }
 
 .hero__box:hover {
-  background: rgba(247, 168, 1, 0.15);
-  border-color: #f7a801;
+  background: rgba(var(--c-accent-rgb), 0.15);
+  border-color: var(--c-accent);
   transform: translateY(-5px);
   box-shadow: 0 20px 40px rgba(0,0,0,0.3);
 }
 
-.hero__box--highlight {
-  background: rgba(247, 168, 1, 0.12);
-  border-color: rgba(247, 168, 1, 0.3);
-}
+/* The original design singled out the PPF box as the featured service with
+   a tinted panel — rgba(247, 168, 1, 0.12) back when the accent was gold.
+   Recoloured to brand red it read as a differently-coloured cell rather
+   than a tint, so the highlight has been dropped: all three hero boxes are
+   now identical.
+
+   The .hero__box--highlight class is still on the PPF box in index.html, so
+   re-enabling is just uncommenting this:
+
+   .hero__box--highlight {
+     border-color: rgba(var(--c-accent-rgb), 0.6);
+   }
+*/
 
 .hero__box-icon {
   font-size: 2.2rem;
-  color: #f7a801;
+  color: var(--c-accent);
   margin-bottom: 15px;
 }
 
+.hero__box h2,
 .hero__box h3 {
   font-size: 1rem;
   font-weight: 700;
@@ -298,14 +393,18 @@ ul {
 .hero__box-sub {
   display: block;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  /* Was 0.6 alpha, which measured 3.20:1 over the glass panel — under the
+     4.5:1 that 12px text needs. The panel is a *lightening* overlay
+     (white 8%), so it raises the backdrop luminance and works against the
+     text rather than for it. */
+  color: rgba(255, 255, 255, 0.92);
   margin-top: 6px;
   font-weight: 400;
 }
 
 /* --- SERVICES --- */
 .services {
-  background: #f6f6f7;
+  background: var(--c-bg-alt);
 }
 
 .services__grid {
@@ -327,19 +426,19 @@ ul {
 .service-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-  border-color: #f7a801;
+  border-color: var(--c-accent);
 }
 
 .service-card__icon {
   font-size: 2.8rem;
-  color: #f7a801;
+  color: var(--c-accent);
   margin-bottom: 20px;
 }
 
 .service-card__title {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #1b242b;
+  color: var(--c-dark);
   text-transform: uppercase;
   margin-bottom: 15px;
   line-height: 1.3;
@@ -348,13 +447,13 @@ ul {
 .service-card__title span {
   font-weight: 400;
   text-transform: none;
-  color: #3b3d42;
+  color: var(--c-text);
   font-size: 0.95rem;
 }
 
 .service-card__text {
   font-size: 0.9rem;
-  color: #757981;
+  color: var(--c-muted);
   line-height: 1.7;
   margin-bottom: 20px;
 }
@@ -363,7 +462,7 @@ ul {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #f7a801;
+  color: var(--c-accent);
   font-weight: 700;
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -389,19 +488,19 @@ ul {
 
 .about__content p {
   margin-bottom: 18px;
-  color: #54595f;
+  color: var(--c-body);
   font-size: 1.05rem;
 }
 
 .about__brand {
   font-size: 1.8rem;
   font-weight: 900;
-  color: #1b242b;
+  color: var(--c-dark);
   margin-bottom: 20px;
 }
 
 .about__brands {
-  background: #f6f6f7;
+  background: var(--c-bg-alt);
   border-radius: 16px;
   padding: 35px 30px;
   position: sticky;
@@ -411,7 +510,7 @@ ul {
 .about__brands h4 {
   font-size: 1rem;
   font-weight: 700;
-  color: #1b242b;
+  color: var(--c-dark);
   margin-bottom: 20px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -429,13 +528,13 @@ ul {
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #54595f;
-  border: 1px solid #e9eaeb;
+  color: var(--c-body);
+  border: 1px solid var(--c-border);
 }
 
 /* --- PROCESS --- */
 .process {
-  background: linear-gradient(135deg, #1b242b 0%, #19191a 100%);
+  background: linear-gradient(135deg, var(--c-dark) 0%, var(--c-darker) 100%);
   color: #fff;
 }
 
@@ -464,15 +563,15 @@ ul {
 }
 
 .process__step:hover {
-  background: rgba(247, 168, 1, 0.08);
-  border-color: rgba(247, 168, 1, 0.2);
+  background: rgba(var(--c-accent-rgb), 0.08);
+  border-color: rgba(var(--c-accent-rgb), 0.2);
   transform: translateY(-5px);
 }
 
 .process__step-num {
   font-size: 3rem;
   font-weight: 900;
-  color: rgba(247, 168, 1, 0.15);
+  color: rgba(var(--c-accent-rgb), 0.15);
   position: absolute;
   top: 10px;
   right: 20px;
@@ -481,7 +580,7 @@ ul {
 
 .process__step-icon {
   font-size: 2.5rem;
-  color: #f7a801;
+  color: var(--c-accent);
   margin-bottom: 20px;
 }
 
@@ -510,7 +609,7 @@ ul {
 
 .ppf__content p {
   font-size: 1.05rem;
-  color: #54595f;
+  color: var(--c-body);
   margin-bottom: 25px;
 }
 
@@ -525,11 +624,11 @@ ul {
   align-items: center;
   gap: 12px;
   font-size: 1rem;
-  color: #54595f;
+  color: var(--c-body);
 }
 
 .ppf__benefits li i {
-  color: #f7a801;
+  color: var(--c-accent);
   font-size: 1.2rem;
 }
 
@@ -542,16 +641,16 @@ ul {
 .ppf__stat {
   text-align: center;
   padding: 40px 20px;
-  background: linear-gradient(135deg, #f6f6f7 0%, #fff 100%);
+  background: linear-gradient(135deg, var(--c-bg-alt) 0%, #fff 100%);
   border-radius: 16px;
-  border: 1px solid #e9eaeb;
+  border: 1px solid var(--c-border);
 }
 
 .ppf__stat-num {
   display: block;
   font-size: 3rem;
   font-weight: 900;
-  color: #f7a801;
+  color: var(--c-accent);
   line-height: 1;
   margin-bottom: 8px;
 }
@@ -559,14 +658,14 @@ ul {
 .ppf__stat-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #54595f;
+  color: var(--c-body);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 /* --- GALLERY --- */
 .gallery {
-  background: #f6f6f7;
+  background: var(--c-bg-alt);
 }
 
 .gallery__grid {
@@ -620,13 +719,13 @@ ul {
   text-transform: uppercase;
   letter-spacing: 1px;
   padding: 8px 16px;
-  background: rgba(247, 168, 1, 0.9);
+  background: rgba(var(--c-accent-rgb), 0.9);
   border-radius: 8px;
 }
 
 /* --- STATS --- */
 .stats {
-  background: linear-gradient(135deg, #1b242b 0%, #19191a 100%);
+  background: linear-gradient(135deg, var(--c-dark) 0%, var(--c-darker) 100%);
   color: #fff;
 }
 
@@ -649,7 +748,7 @@ ul {
   display: block;
   font-size: 4rem;
   font-weight: 900;
-  color: #f7a801;
+  color: var(--c-accent);
   line-height: 1;
   margin-bottom: 12px;
 }
@@ -686,7 +785,7 @@ ul {
 }
 
 .testimonial-card__stars {
-  color: #f7a801;
+  color: var(--c-star);
   font-size: 1.2rem;
   margin-bottom: 20px;
 }
@@ -694,7 +793,7 @@ ul {
 .testimonial-card__text {
   font-size: 1.15rem;
   font-style: italic;
-  color: #54595f;
+  color: var(--c-body);
   line-height: 1.8;
   margin-bottom: 25px;
 }
@@ -707,13 +806,13 @@ ul {
 
 .testimonial-card__name {
   font-weight: 700;
-  color: #1b242b;
+  color: var(--c-dark);
   font-size: 1.05rem;
 }
 
 .testimonial-card__car {
   font-size: 0.85rem;
-  color: #8d98a1;
+  color: var(--c-muted-light);
 }
 
 .testimonials__controls {
@@ -726,7 +825,7 @@ ul {
 
 .testimonials__btn {
   background: none;
-  border: 2px solid #e9eaeb;
+  border: 2px solid var(--c-border);
   border-radius: 50%;
   width: 44px;
   height: 44px;
@@ -734,41 +833,57 @@ ul {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #54595f;
+  color: var(--c-body);
   transition: all 0.3s ease;
   font-size: 1rem;
 }
 
 .testimonials__btn:hover {
-  border-color: #f7a801;
-  color: #f7a801;
-  background: rgba(247, 168, 1, 0.06);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+  background: rgba(var(--c-accent-rgb), 0.06);
 }
 
 .testimonials__dots {
   display: flex;
-  gap: 8px;
+  gap: 2px;
+  align-items: center;
 }
 
+/* The dot LOOKS 10px but the button is 24x24 so it meets the minimum
+   target size. background-clip: content-box paints the visible dot inside
+   the padding box while the whole 24px square stays clickable. */
 .testimonials__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #e9eaeb;
+  width: 24px;
+  height: 24px;
+  padding: 7px;
+  box-sizing: border-box;
   border: none;
+  border-radius: 50%;
+  background-color: var(--c-border);
+  background-clip: content-box;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition:
+    background-color var(--dur) var(--ease),
+    width var(--dur) var(--ease);
+}
+
+.testimonials__dot:hover {
+  background-color: var(--c-muted-light);
+  background-clip: content-box;
 }
 
 .testimonials__dot.active {
-  background: #f7a801;
-  width: 30px;
-  border-radius: 5px;
+  width: 44px;
+  padding: 7px 17px;
+  border-radius: 12px;
+  background-color: var(--c-accent);
+  background-clip: content-box;
 }
 
 /* --- PRICING --- */
 .pricing {
-  background: #f6f6f7;
+  background: var(--c-bg-alt);
 }
 
 .pricing__grid {
@@ -795,14 +910,14 @@ ul {
 }
 
 .pricing__card--featured {
-  border-color: #f7a801;
+  border-color: var(--c-accent);
   position: relative;
 }
 
 .pricing__card h3 {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #1b242b;
+  color: var(--c-dark);
   text-transform: uppercase;
   margin-bottom: 15px;
 }
@@ -810,7 +925,7 @@ ul {
 .pricing__price {
   font-size: 2rem;
   font-weight: 900;
-  color: #f7a801;
+  color: var(--c-accent);
   margin-bottom: 20px;
 }
 
@@ -823,7 +938,7 @@ ul {
 .pricing__card ul li {
   padding: 8px 0;
   font-size: 0.9rem;
-  color: #54595f;
+  color: var(--c-body);
   position: relative;
   padding-left: 24px;
 }
@@ -834,7 +949,7 @@ ul {
   font-weight: 900;
   position: absolute;
   left: 0;
-  color: #f7a801;
+  color: var(--c-accent);
   font-size: 0.8rem;
 }
 
@@ -846,23 +961,23 @@ ul {
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: #1b242b;
+  background: var(--c-dark);
   color: #fff;
   transition: all 0.3s ease;
 }
 
 .pricing__btn:hover {
-  background: #f7a801;
-  color: #1b242b;
+  background: var(--c-accent);
+  color: #fff;
 }
 
 .pricing__card--featured .pricing__btn {
-  background: #f7a801;
-  color: #1b242b;
+  background: var(--c-accent);
+  color: #fff;
 }
 
 .pricing__card--featured .pricing__btn:hover {
-  background: #1b242b;
+  background: var(--c-dark);
   color: #fff;
 }
 
@@ -885,16 +1000,16 @@ ul {
   gap: 12px;
   font-size: 1.5rem;
   font-weight: 800;
-  color: #1b242b;
+  color: var(--c-dark);
   transition: color 0.3s ease;
 }
 
 .contact__phones a:hover {
-  color: #f7a801;
+  color: var(--c-accent);
 }
 
 .contact__phones a i {
-  color: #f7a801;
+  color: var(--c-accent);
   font-size: 1.3rem;
 }
 
@@ -907,7 +1022,7 @@ ul {
 .contact__form-wrapper h3 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1b242b;
+  color: var(--c-dark);
   margin-bottom: 25px;
 }
 
@@ -921,19 +1036,25 @@ ul {
 .form__group textarea {
   width: 100%;
   padding: 14px 18px;
-  border: 2px solid #e9eaeb;
+  border: 2px solid var(--c-border);
   border-radius: 10px;
   font-family: 'Raleway', sans-serif;
   font-size: 0.95rem;
   transition: border-color 0.3s ease;
   background: #fff;
-  color: #3b3d42;
+  color: var(--c-text);
+}
+
+.form__group input:focus-visible,
+.form__group textarea:focus-visible {
+  border-color: var(--c-accent);
+  outline: 3px solid rgba(var(--c-accent-rgb), 0.45);
+  outline-offset: 2px;
 }
 
 .form__group input:focus,
 .form__group textarea:focus {
-  outline: none;
-  border-color: #f7a801;
+  border-color: var(--c-accent);
 }
 
 .form__group textarea {
@@ -945,8 +1066,8 @@ ul {
   padding: 15px 35px;
   border: none;
   border-radius: 50px;
-  background: #f7a801;
-  color: #1b242b;
+  background: var(--c-accent);
+  color: #fff;
   font-weight: 700;
   font-size: 1rem;
   text-transform: uppercase;
@@ -957,7 +1078,7 @@ ul {
 }
 
 .form__btn:hover {
-  background: #1b242b;
+  background: var(--c-dark);
   color: #fff;
 }
 
@@ -975,7 +1096,7 @@ ul {
 
 .contact__info-item > i {
   font-size: 1.3rem;
-  color: #f7a801;
+  color: var(--c-accent);
   margin-top: 4px;
   width: 24px;
   text-align: center;
@@ -984,19 +1105,19 @@ ul {
 .contact__info-item strong {
   display: block;
   font-weight: 700;
-  color: #1b242b;
+  color: var(--c-dark);
   margin-bottom: 4px;
 }
 
 .contact__info-item span,
 .contact__info-item a {
   display: block;
-  color: #54595f;
+  color: var(--c-body);
   font-size: 0.95rem;
 }
 
 .contact__info-item a:hover {
-  color: #f7a801;
+  color: var(--c-accent);
 }
 
 .contact__social {
@@ -1012,20 +1133,20 @@ ul {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f6f6f7;
-  color: #54595f;
+  background: var(--c-bg-alt);
+  color: var(--c-body);
   transition: all 0.3s ease;
   font-size: 1rem;
 }
 
 .contact__social a:hover {
-  background: #f7a801;
+  background: var(--c-accent);
   color: #fff;
 }
 
 /* --- FOOTER --- */
 .footer {
-  background: #1b242b;
+  background: var(--c-dark);
   color: rgba(255, 255, 255, 0.7);
   padding-top: 60px;
 }
@@ -1070,7 +1191,7 @@ ul {
 }
 
 .footer__nav a:hover {
-  color: #f7a801;
+  color: var(--c-accent);
 }
 
 .footer__contact a {
@@ -1082,7 +1203,7 @@ ul {
 }
 
 .footer__contact a:hover {
-  color: #f7a801;
+  color: var(--c-accent);
 }
 
 .footer__bottom {
@@ -1092,7 +1213,9 @@ ul {
 
 .footer__bottom p {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.4);
+  /* 0.4 alpha composited to #7d797f on the dark footer: 3.71:1, under the
+     4.5:1 needed at this size. 0.6 lands around 5.8:1. */
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .footer__credit {
@@ -1100,11 +1223,16 @@ ul {
 }
 
 .footer__credit a {
-  color: rgba(247, 168, 1, 0.7);
+  /* Was rgba(accent, 0.7) on the dark footer: 2.64:1, and colour was the
+     only thing marking it as a link. Now the dark-surface tint plus an
+     underline, so it passes contrast and is distinguishable without colour. */
+  color: var(--c-accent-on-dark);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .footer__credit a:hover {
-  color: #f7a801;
+  color: #fff;
 }
 
 /* --- COOKIE BANNER --- */
@@ -1113,7 +1241,7 @@ ul {
   bottom: 0;
   left: 0;
   right: 0;
-  background: #1b242b;
+  background: var(--c-dark);
   color: #fff;
   padding: 18px 20px;
   display: flex;
@@ -1153,12 +1281,12 @@ ul {
 }
 
 .cookie-banner__btn {
-  background: #f7a801;
-  color: #1b242b;
+  background: var(--c-accent);
+  color: #fff;
 }
 
 .cookie-banner__btn:hover {
-  background: #e09500;
+  background: var(--c-accent-dark);
 }
 
 .cookie-banner__btn--secondary {
@@ -1168,8 +1296,8 @@ ul {
 }
 
 .cookie-banner__btn--secondary:hover {
-  border-color: #f7a801;
-  color: #f7a801;
+  border-color: var(--c-accent);
+  color: var(--c-accent);
 }
 
 /* --- SCROLL TO TOP --- */
@@ -1180,8 +1308,8 @@ ul {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: #f7a801;
-  color: #1b242b;
+  background: var(--c-accent);
+  color: #fff;
   border: none;
   cursor: pointer;
   font-size: 1.2rem;
@@ -1193,7 +1321,7 @@ ul {
   visibility: hidden;
   transform: translateY(20px);
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(247, 168, 1, 0.3);
+  box-shadow: 0 4px 15px rgba(var(--c-accent-rgb), 0.3);
 }
 
 .scroll-top.show {
@@ -1203,7 +1331,7 @@ ul {
 }
 
 .scroll-top:hover {
-  background: #1b242b;
+  background: var(--c-dark);
   color: #fff;
 }
 
@@ -1251,7 +1379,9 @@ ul {
     top: 75px;
     left: 0;
     right: 0;
-    background: rgba(27, 36, 43, 0.98);
+    /* Solid, not 0.98 — at 98% the hero headline ghosted through the
+       open menu panel. */
+    background: var(--c-dark);
     padding: 30px;
     flex-direction: column;
     align-items: center;
@@ -1399,7 +1529,7 @@ ul {
   width: 100%;
   height: 100vh; /* full viewport height */
   overflow: hidden;
-  background: #0d0d0d;
+  background: var(--c-black);
 }
 
 /* --- CANVAS --- */
@@ -1437,10 +1567,10 @@ ul {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 4px;
-  color: #f7a801;
+  color: var(--c-accent);
   margin-bottom: 16px;
   padding: 6px 18px;
-  border: 1px solid rgba(247, 168, 1, 0.3);
+  border: 1px solid rgba(var(--c-accent-rgb), 0.3);
   border-radius: 50px;
 }
 
@@ -1454,7 +1584,7 @@ ul {
 }
 
 .scroll-overlay__title span {
-  color: #f7a801;
+  color: var(--c-accent);
 }
 
 .scroll-overlay__desc {
@@ -1474,7 +1604,7 @@ ul {
 .scroll-overlay__pct {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #f7a801;
+  color: var(--c-accent);
   min-width: 50px;
   text-align: center;
 }
@@ -1508,16 +1638,20 @@ ul {
 
 /* --- LOADING OVERLAY --- */
 .scroll-loading {
-  position: fixed;
+  /* Absolute, not fixed: as `position: fixed` this covered the ENTIRE
+     viewport in black on first paint — hiding the hero behind a loading
+     screen for a decorative frame sequence further down the page. It is
+     now scoped to its own section. */
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  z-index: 99999;
+  height: 100vh;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0d0d0d;
+  background: var(--c-black);
   transition: opacity 0.6s ease, visibility 0.6s ease;
 }
 
@@ -1535,8 +1669,8 @@ ul {
   width: 60px;
   height: 60px;
   margin: 0 auto 24px;
-  border: 3px solid rgba(247, 168, 1, 0.1);
-  border-top-color: #f7a801;
+  border: 3px solid rgba(var(--c-accent-rgb), 0.1);
+  border-top-color: var(--c-accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -1564,7 +1698,7 @@ ul {
 .scroll-loading__percent {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #f7a801;
+  color: var(--c-accent);
 }
 
 .scroll-loading__bar {
@@ -1579,7 +1713,7 @@ ul {
 .scroll-loading__bar-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #f7a801, #ffc34d);
+  background: linear-gradient(90deg, var(--c-accent), var(--c-accent-light));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -1616,4 +1750,817 @@ ul {
   .scroll-container {
     height: 150vh; /* less scroll on mobile */
   }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* --- Skip link: first tab stop, visible only when focused --- */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -120%);
+  z-index: 2000;
+  padding: 12px 24px;
+  background: var(--c-accent);
+  color: #fff;
+  font-weight: 700;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.skip-link:focus-visible {
+  transform: translate(-50%, 0);
+  outline: 3px solid #fff;
+  outline-offset: -6px;
+}
+
+/* --- Global focus ring ---
+   Every interactive control gets a visible ring. Uses :focus-visible so
+   mouse users never see it, but keyboard users always do. --- */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--c-accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* On dark backgrounds the red ring is hard to see — use white there. */
+.header .nav__link:focus-visible,
+.header .nav__social a:focus-visible,
+.hero a:focus-visible,
+.footer a:focus-visible,
+.scroll-section a:focus-visible,
+.cookie-banner button:focus-visible,
+.hamburger:focus-visible {
+  outline-color: #fff;
+}
+
+/* --- Screen-reader-only text --- */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Larger tap targets on touch devices (WCAG 2.5.5) */
+@media (pointer: coarse) {
+  .nav__link,
+  .footer__nav a,
+  .service-card__link {
+    padding-block: 10px;
+  }
+
+  .testimonials__btn,
+  .cookie-banner__btn,
+  .scroll-top {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ============================================
+   BRAND LOGO (real logo from the client's site)
+   ============================================ */
+
+.logo img,
+.logo__img {
+  display: block;
+  width: auto;
+  height: 38px;
+}
+
+/* The logo artwork is dark plum on transparent, so it needs to be
+   lightened on the dark header/footer to stay legible. */
+.header .logo__img,
+.footer .logo__img {
+  filter: brightness(0) invert(1);
+}
+
+.footer .logo__img {
+  height: 42px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+  .logo img,
+  .logo__img {
+    height: 30px;
+  }
+}
+
+/* ============================================
+   SCROLL REVEAL — the class-adding effect
+   ============================================ */
+
+/* Elements start offset and transparent; JS adds .visible when they
+   intersect the viewport. --reveal-i is set per element for stagger. */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity var(--dur-slow) var(--ease),
+    transform var(--dur-slow) var(--ease);
+  transition-delay: calc(var(--reveal-i, 0) * 90ms);
+  will-change: opacity, transform;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* Variant: scale up slightly — used on the stat cards */
+.reveal--pop {
+  transform: translateY(24px) scale(0.94);
+}
+
+.reveal--pop.visible {
+  transform: none;
+}
+
+/* Variant: slide in from the side — used on gallery tiles */
+.reveal--left  { transform: translateX(-34px); }
+.reveal--right { transform: translateX(34px); }
+.reveal--left.visible,
+.reveal--right.visible { transform: none; }
+
+/* ============================================
+   STATS — card treatment + counting animation
+   ============================================ */
+
+/* This section sits on a dark gradient and its labels are white, so the
+   cards are a translucent light panel — a white card here made the
+   labels invisible. */
+.stats__item {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  transition:
+    transform var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.stats__item:hover {
+  transform: translateY(-6px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(var(--c-accent-rgb), 0.55);
+}
+
+/* Tabular figures stop the number jittering as digits change width */
+.stats__num,
+.ppf__stat-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* A counter mid-animation gets a subtle accent tint */
+.counter[data-counting='true'] {
+  color: var(--c-accent-light);
+}
+
+.stats__suffix {
+  color: var(--c-accent);
+}
+
+/* ============================================
+   GALLERY — fixed row height keeps the grid aligned
+   ============================================ */
+
+.gallery__grid {
+  grid-auto-rows: 250px;
+  /* A `span 2` tile that reaches the last column cannot fit there and gets
+     pushed to the next row, leaving a hole. `dense` lets the following
+     single-width tiles backfill those holes. Safe here because gallery
+     tiles are not focusable, so visual order can differ from DOM order. */
+  grid-auto-flow: dense;
+}
+
+/* The wide tile spans two columns but only ever one row, so rows stay
+   flush. The old rule combined `span 2` with aspect-ratio: 4/3, which
+   made wide tiles 1.5x taller than their neighbours and broke the grid. */
+.gallery__item {
+  aspect-ratio: auto;
+}
+
+.gallery__item--wide {
+  grid-column: span 2;
+  grid-row: span 1;
+}
+
+.gallery__item img {
+  background: var(--c-bg-alt);
+}
+
+.gallery__more {
+  margin-top: 34px;
+  text-align: center;
+}
+
+.gallery__count {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+  color: var(--c-muted);
+}
+
+@media (max-width: 1024px) {
+  .gallery__grid { grid-auto-rows: 210px; }
+}
+
+@media (max-width: 768px) {
+  .gallery__grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 175px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery__grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: 210px;
+  }
+  .gallery__item--wide { grid-column: span 1; }
+}
+
+/* ============================================
+   TESTIMONIALS — Google review provenance
+   ============================================ */
+
+.testimonial-card__source {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  font-size: 0.82rem;
+  color: var(--c-muted);
+}
+
+.testimonial-card__source svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.testimonials__source-note {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 0.92rem;
+  color: var(--c-muted);
+}
+
+.testimonials__source-note a {
+  color: var(--c-accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Autoplay pauses on hover AND on keyboard focus within the slider */
+.testimonials__track {
+  transition: transform var(--dur-slow) var(--ease);
+}
+
+/* ============================================
+   PRICING — honest individual-quote card
+   ============================================ */
+
+.pricing__note {
+  max-width: 760px;
+  margin: 0 auto 42px;
+  text-align: center;
+  color: var(--c-body);
+}
+
+.pricing__price--quote {
+  font-size: 1.45rem;
+  line-height: 1.35;
+}
+
+.pricing__meta {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--c-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ============================================
+   CONTACT FORM — status messaging
+   ============================================ */
+
+.form__status {
+  margin-top: 16px;
+  padding: 13px 16px;
+  border-radius: 8px;
+  font-size: 0.93rem;
+  font-weight: 600;
+  display: none;
+}
+
+.form__status.is-visible { display: block; }
+
+.form__status--success {
+  background: rgba(31, 122, 61, 0.12);
+  border: 1px solid rgba(31, 122, 61, 0.4);
+  color: var(--c-success);
+}
+
+.form__status--error {
+  background: rgba(var(--c-accent-rgb), 0.1);
+  border: 1px solid rgba(var(--c-accent-rgb), 0.4);
+  color: var(--c-accent-dark);
+}
+
+.form__status a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 800;
+}
+
+.form__btn[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Honeypot — hidden from humans, catches naive bots */
+.form__trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ============================================
+   FOOTER — legal identification
+   ============================================ */
+
+.footer__legal {
+  margin-top: 14px;
+  font-size: 0.86rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.footer__legal strong {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+}
+
+.footer__address {
+  font-style: normal;
+}
+
+/* ============================================
+   MOBILE HERO — smaller background file
+   ============================================ */
+
+@media (max-width: 960px) {
+  .hero__bg {
+    background-image:
+      linear-gradient(135deg, rgba(var(--c-dark-rgb), 0.88) 0%, rgba(var(--c-dark-rgb), 0.55) 100%),
+      url('../assets/img/hero-960.webp');
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   Respects the OS "reduce motion" setting. The canvas scroll
+   sequence, hero zoom, reveals, counters and carousel autoplay
+   are all animation — none of them carry information, so under
+   this setting they resolve instantly to their end state.
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hero__bg { animation: none; }
+
+  /* Reveals must not leave content invisible if the observer is skipped */
+  .reveal,
+  .fade-in {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .gallery__item:hover img,
+  .stats__item:hover {
+    transform: none;
+  }
+
+  /* The pinned canvas section collapses to a single static frame */
+  .scroll-section[data-reduced-motion='true'] .scroll-container {
+    height: auto;
+  }
+
+  .scroll-section[data-reduced-motion='true'] .scroll-frame {
+    position: relative;
+    height: 62vh;
+  }
+}
+
+
+/* ============================================
+   ACCENT ON DARK SURFACES
+   Contrast fix — see --c-accent-on-dark in :root.
+   ============================================ */
+
+.nav__link:hover,
+.nav__link.active,
+.hero__title-accent,
+.hero__box:hover,
+.hero__box-icon,
+.stats__num,
+.stats__suffix,
+.footer__nav a:hover,
+.footer__contact a:hover,
+.footer__credit a:hover,
+.cookie-banner__btn--secondary:hover,
+.scroll-overlay__pre,
+.scroll-overlay__title span,
+.scroll-overlay__pct,
+.scroll-loading__percent {
+  color: var(--c-accent-on-dark);
+}
+
+/* Counting state, on the dark stats panel */
+.stats__item .counter[data-counting='true'] {
+  color: var(--c-accent-on-dark);
+}
+
+/* Map link in the contact block — was rendering as plain text with no
+   affordance that it is a link. */
+.contact__info-item .contact__address + a {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--c-accent);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contact__info-item .contact__address + a:hover {
+  color: var(--c-accent-dark);
+}
+
+/* ============================================
+   ICON SPACE RESERVATION (CLS fix)
+   Font Awesome is loaded non-blocking, so before its webfont arrives an
+   <i class="fas ..."> has no glyph and collapses to roughly zero size.
+   When the font lands every icon suddenly gains a box, growing its
+   parent and pushing the page down — this was the single largest layout
+   shift on the page (0.2 CLS in the hero alone). Reserving a 1em box up
+   front makes the glyph's arrival free of layout change.
+   ============================================ */
+
+.fas,
+.fab,
+.far,
+.fa-solid,
+.fa-brands,
+.fa-regular {
+  display: inline-block;
+  min-width: 1em;
+  height: 1em;
+  line-height: 1;
+  text-align: center;
+  vertical-align: -0.075em;
+}
+
+/* Icon wrappers whose only child is an icon also need a reserved height,
+   because they set their own font-size. */
+.hero__box-icon,
+.service-card__icon,
+.process__step-icon {
+  height: 1em;
+  line-height: 1;
+}
+
+/* ============================================
+   SCROLL OVERLAY LEGIBILITY
+   The frame sequence used to be dark workshop footage, so the overlay
+   text sat on it comfortably. The client's own clip is a brightly lit
+   blue wrap, which left the small red "sledujte proměnu" line and the
+   progress percentage close to unreadable. A scrim behind the text
+   restores contrast without dimming the whole frame.
+   ============================================ */
+
+.scroll-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 78% 62% at 50% 50%,
+      rgba(var(--c-dark-rgb), 0.82) 0%,
+      rgba(var(--c-dark-rgb), 0.6) 45%,
+      rgba(var(--c-dark-rgb), 0) 78%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(var(--c-dark-rgb), 0.45) 0%,
+      rgba(var(--c-dark-rgb), 0) 30%,
+      rgba(var(--c-dark-rgb), 0) 70%,
+      rgba(var(--c-dark-rgb), 0.45) 100%
+    );
+  pointer-events: none;
+}
+
+/* Keep the text above the scrim */
+.scroll-overlay__content {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ============================================
+   AGGREGATE RATING
+   The score is stated in text as well as drawn, so the star graphic is
+   decorative reinforcement rather than the only carrier of the rating.
+   That matters: bright gold on white is about 2:1, below the 3:1 WCAG
+   asks of informative graphics — fine here because "4,8 z 5" is written
+   out, but it is why the number is not optional.
+   ============================================ */
+
+/* Heading + rating on one centred line. The h2 keeps its own centring for
+   the case where no rating is present. */
+.section__head-rated {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin-bottom: 8px;
+}
+
+.section__head-rated .section__title {
+  margin-bottom: 0;
+}
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px 7px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 50px;
+  background: var(--c-bg);
+}
+
+.rating__stars {
+  position: relative;
+  display: inline-block;
+  font-size: 1.05rem;
+  line-height: 1;
+  /* No letter-spacing: it adds a trailing gap *inside* the 100% width, so a
+     96% clip lands in empty space after the fifth star and 4.8 renders as a
+     full 5. Spacing comes from per-star margins instead, with none on the
+     last, so the clip falls inside the glyph where it belongs. */
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.rating__stars i {
+  margin-right: 3px;
+}
+
+.rating__stars i:last-child {
+  margin-right: 0;
+}
+
+/* Empty row sets the width; the gold row is clipped over the top of it. */
+.rating__stars-empty {
+  color: var(--c-star-empty);
+}
+
+.rating__stars-full {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--fill, 100%);
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--c-star);
+}
+
+.rating__score {
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--c-heading);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rating__score span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+@media (max-width: 600px) {
+  /* Stack under the heading rather than squeezing beside it */
+  .section__head-rated {
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+
+/* ============================================
+   PRICE LIST
+   Real figures transcribed from the client's /cenik/ page. Semantic
+   tables rather than styled divs so screen readers announce the row
+   header ("Kapota") with each cell, and so the numbers stay copyable.
+   ============================================ */
+
+.price-block {
+  margin-top: 54px;
+}
+
+.price-block:first-of-type {
+  margin-top: 12px;
+}
+
+.price-block__title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-heading);
+  margin-bottom: 6px;
+}
+
+.price-block__title::after {
+  content: '';
+  display: block;
+  width: 46px;
+  height: 3px;
+  margin-top: 10px;
+  border-radius: 2px;
+  background: var(--c-accent);
+}
+
+.price-block__lead {
+  margin: 14px 0 0;
+  color: var(--c-body);
+  font-size: 0.95rem;
+}
+
+/* Wide tables scroll inside their own box; the page never scrolls sideways */
+.price-table-wrap {
+  margin-top: 20px;
+  overflow-x: auto;
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  background: var(--c-bg);
+}
+
+.price-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  min-width: 380px;
+}
+
+.price-table caption {
+  text-align: left;
+}
+
+.price-table thead th {
+  background: var(--c-bg-alt);
+  color: var(--c-heading);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: right;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+}
+
+.price-table thead th:first-child {
+  text-align: left;
+}
+
+.price-table tbody th {
+  font-weight: 600;
+  color: var(--c-text);
+  text-align: left;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.price-table tbody td {
+  text-align: right;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--c-border);
+  color: var(--c-heading);
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Only the lights table has a trailing qualifier column ("2 kusy"), which
+   should read quieter than a price. Scoped by class — a positional selector
+   also caught "Matná" in the parts table, where both columns are real prices
+   and must carry equal weight. */
+.price-table--qualifier tbody td:last-child {
+  font-weight: 500;
+  color: var(--c-muted);
+}
+
+.price-table tbody tr:last-child th,
+.price-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.price-table tbody tr:hover th,
+.price-table tbody tr:hover td {
+  background: rgba(var(--c-accent-rgb), 0.035);
+}
+
+.price-notes {
+  margin-top: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.price-notes li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--c-muted);
+}
+
+.price-notes li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-accent);
+}
+
+.price-notes strong {
+  color: var(--c-text);
+}
+
+/* --- PPF cards --- */
+.pricing__card h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--c-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pricing__tier {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--c-muted);
+}
+
+@media (max-width: 768px) {
+  .price-block { margin-top: 42px; }
+  .price-table { font-size: 0.9rem; }
+  .price-table thead th,
+  .price-table tbody th,
+  .price-table tbody td { padding: 11px 14px; }
 }

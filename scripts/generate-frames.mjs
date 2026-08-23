@@ -17,10 +17,10 @@
  * ============================================
  */
 
+import { existsSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 
 // ─── Config ────────────────────────────────────────────────────────
 
@@ -171,10 +171,7 @@ async function generateFrames() {
     const svg = buildCarSVG(progress, i, TOTAL_FRAMES);
     const outPath = join(OUT_DIR, `car_${i}.webp`);
 
-    await sharp(Buffer.from(svg))
-      .resize(WIDTH, HEIGHT)
-      .webp({ quality: 85 })
-      .toFile(outPath);
+    await sharp(Buffer.from(svg)).resize(WIDTH, HEIGHT).webp({ quality: 85 }).toFile(outPath);
 
     const pct = Math.round(progress * 100);
     process.stdout.write(`\r  ▸ Frame ${i}/${TOTAL_FRAMES}  (${pct}%)  — saved`);

@@ -1,0 +1,74 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": ".",
+      "url": ["http://localhost/index.html"],
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "desktop"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": [
+          "error",
+          {
+            "minScore": 0.9
+          }
+        ],
+        "categories:accessibility": [
+          "error",
+          {
+            "minScore": 1.0
+          }
+        ],
+        "categories:best-practices": [
+          "error",
+          {
+            "minScore": 1.0
+          }
+        ],
+        "categories:seo": [
+          "error",
+          {
+            "minScore": 1.0
+          }
+        ],
+        "color-contrast": "warn",
+        "image-alt": "error",
+        "label": "error",
+        "link-name": "error",
+        "button-name": "error",
+        "meta-description": "error",
+        "document-title": "error",
+        "html-has-lang": "error",
+        "tap-targets": "warn",
+        "cumulative-layout-shift": [
+          "error",
+          {
+            "maxNumericValue": 0.05
+          }
+        ],
+        "total-blocking-time": [
+          "warn",
+          {
+            "maxNumericValue": 300
+          }
+        ],
+        "largest-contentful-paint": [
+          "warn",
+          {
+            "maxNumericValue": 3000
+          }
+        ],
+        "unused-javascript": "off",
+        "unused-css-rules": "off",
+        "uses-long-cache-ttl": "off",
+        "csp-xss": "off"
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}
