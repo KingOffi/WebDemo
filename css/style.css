@@ -1380,6 +1380,8 @@ ol {
     opacity var(--dur) var(--ease),
     transform var(--dur) var(--ease),
     visibility var(--dur) var(--ease),
+    /* Matches the cookie notice's own 0.5s slide, so the two move together. */
+    bottom 0.5s var(--ease),
     box-shadow var(--dur-fast) var(--ease);
 }
 
@@ -1451,14 +1453,19 @@ ol {
   100% { box-shadow: 0 0 0 0 rgba(var(--c-accent-rgb), 0); }
 }
 
-/* The cookie notice is a full-width bar pinned to the same edge. Rather than
-   stacking two competing calls to action, the corner stack yields until the
-   visitor has answered it. */
-body.cookie-open .book-cta,
+/* The cookie notice is a full-width bar pinned to the same edge, and on a
+   first visit it is up before the CTA ever appears. So the stack rides above
+   it rather than hiding behind it — hiding would make the button invisible
+   exactly when a new visitor is most likely to want it. --cookie-h is the
+   measured height of the notice, set from main.ts. */
+body.cookie-open .book-cta {
+  bottom: calc(var(--fab-edge) + var(--cookie-h, 0px));
+}
+
 body.cookie-open .scroll-top {
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(16px);
+  bottom: calc(
+    var(--fab-edge) + var(--cookie-h, 0px) + var(--cta-h) + var(--fab-gap)
+  );
 }
 
 @media (max-width: 600px) {

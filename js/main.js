@@ -165,12 +165,12 @@ function initBookCta() {
     }
     // The hero carries no booking action of its own, so this is the only
     // conversion path in the first viewport and is shown from the start rather
-    // than on scroll. The delay clears the cookie notice's own 600ms entrance,
-    // so a first-time visitor never sees the button flash and withdraw.
+    // than on scroll. The short delay is only so the entrance animation is seen
+    // against a settled page.
     window.setTimeout(() => {
         ctaReady = true;
         updateBookCta();
-    }, 1400);
+    }, 800);
 }
 /* ─────────────────────────────────────────────
    COOKIE NOTICE
@@ -187,12 +187,23 @@ function initCookieBanner() {
     }
     if (stored)
         return;
+    // The notice wraps to two or three lines on narrow screens, so its height
+    // has to be measured rather than assumed; the corner stack sits on top of
+    // whatever it turns out to be.
+    const measureCookieHeight = () => {
+        document.body.style.setProperty('--cookie-h', `${cookieBanner.offsetHeight + 14}px`);
+    };
     window.setTimeout(() => {
         cookieBanner.hidden = false;
+        measureCookieHeight();
         cookieBanner.classList.add('show');
-        // Stands the corner stack down while the notice occupies that edge.
+        // Lifts the corner stack clear of the notice while it occupies that edge.
         document.body.classList.add('cookie-open');
     }, 600);
+    window.addEventListener('resize', () => {
+        if (document.body.classList.contains('cookie-open'))
+            measureCookieHeight();
+    });
     const dismiss = (value) => {
         try {
             localStorage.setItem('cookieConsent', value);
