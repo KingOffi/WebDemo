@@ -33,6 +33,7 @@ const header = document.getElementById('header');
 const hamburger = document.getElementById('hamburger');
 const nav = document.getElementById('nav');
 const scrollTopBtn = document.getElementById('scrollTop');
+const bookCta = document.getElementById('bookCta');
 const cookieBanner = document.getElementById('cookieBanner');
 const cookieAccept = document.getElementById('cookieAccept');
 const cookieDecline = document.getElementById('cookieDecline');
@@ -135,6 +136,43 @@ function initScrollTop() {
     });
 }
 /* ─────────────────────────────────────────────
+   FLOATING BOOKING CTA
+   ───────────────────────────────────────────── */
+/** True while the contact section is on screen. The CTA scrolls the visitor
+ *  there, so keeping it up once they have arrived is both redundant and in
+ *  the way of the form it is covering. */
+let contactInView = false;
+/** Held false until the entrance delay has passed, so the observer below
+ *  cannot reveal the button early and skip its animation. */
+let ctaReady = false;
+function updateBookCta() {
+    bookCta?.classList.toggle('show', ctaReady && !contactInView);
+}
+function initBookCta() {
+    if (!bookCta)
+        return;
+    const contact = document.getElementById('kontakt');
+    if (contact && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            for (const entry of entries)
+                contactInView = entry.isIntersecting;
+            updateBookCta();
+        }, 
+        // Any sliver of the section counts — by the time its heading is visible
+        // the visitor has found the form on their own.
+        { threshold: 0 });
+        observer.observe(contact);
+    }
+    // The hero carries no booking action of its own, so this is the only
+    // conversion path in the first viewport and is shown from the start rather
+    // than on scroll. The delay clears the cookie notice's own 600ms entrance,
+    // so a first-time visitor never sees the button flash and withdraw.
+    window.setTimeout(() => {
+        ctaReady = true;
+        updateBookCta();
+    }, 1400);
+}
+/* ─────────────────────────────────────────────
    COOKIE NOTICE
    ───────────────────────────────────────────── */
 function initCookieBanner() {
@@ -152,6 +190,8 @@ function initCookieBanner() {
     window.setTimeout(() => {
         cookieBanner.hidden = false;
         cookieBanner.classList.add('show');
+        // Stands the corner stack down while the notice occupies that edge.
+        document.body.classList.add('cookie-open');
     }, 600);
     const dismiss = (value) => {
         try {
@@ -161,6 +201,7 @@ function initCookieBanner() {
             // Nothing we can do; hiding it for this session is still correct.
         }
         cookieBanner.classList.remove('show');
+        document.body.classList.remove('cookie-open');
         window.setTimeout(() => {
             cookieBanner.hidden = true;
         }, 400);
@@ -463,6 +504,7 @@ function init() {
     measureSections();
     initNav();
     initScrollTop();
+    initBookCta();
     initCookieBanner();
     initCarousel();
     initCounters();

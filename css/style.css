@@ -47,6 +47,14 @@
 
   /* ---- Layout ---- */
   --header-h: 80px;
+
+  /* ---- Floating controls (bottom-right stack) ----
+     The booking CTA is anchored to the corner and the back-to-top button
+     stacks directly above it, so both positions derive from these three
+     values. Change --fab-edge once and the whole stack moves together. */
+  --fab-edge: 30px;
+  --fab-gap:  12px;
+  --cta-h:    56px;
 }
 
 /* --- RESET & BASE --- */
@@ -1303,8 +1311,9 @@ ol {
 /* --- SCROLL TO TOP --- */
 .scroll-top {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
+  /* Sits directly above the booking CTA rather than on top of it. */
+  bottom: calc(var(--fab-edge) + var(--cta-h) + var(--fab-gap));
+  right: var(--fab-edge);
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -1333,6 +1342,149 @@ ol {
 .scroll-top:hover {
   background: var(--c-dark);
   color: #fff;
+}
+
+/* --- FLOATING BOOKING CTA ---
+   The one persistent conversion path on the page: the hero offers no booking
+   action of its own, so this carries the first viewport. Pinned bottom-right,
+   and steps aside when the contact form it points at is already on screen or
+   the cookie notice owns that edge (both handled in main.ts). */
+.book-cta {
+  position: fixed;
+  right: var(--fab-edge);
+  bottom: var(--fab-edge);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--cta-h);
+  padding: 9px 24px 9px 11px;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    var(--c-accent-light) 0%,
+    var(--c-accent) 55%,
+    var(--c-accent-dark) 100%
+  );
+  color: #fff;
+  text-decoration: none;
+  /* Two shadows: a coloured glow to make it read as the primary action, and a
+     neutral one underneath so it still separates from light page sections. */
+  box-shadow:
+    0 10px 28px rgba(var(--c-accent-rgb), 0.42),
+    0 2px 8px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px) scale(0.96);
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    visibility var(--dur) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.book-cta.show {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+.book-cta:hover,
+.book-cta:focus-visible {
+  transform: translateY(-3px);
+  box-shadow:
+    0 16px 36px rgba(var(--c-accent-rgb), 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.22);
+}
+
+.book-cta:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.book-cta:active {
+  transform: translateY(-1px);
+}
+
+.book-cta__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 1.05rem;
+}
+
+.book-cta__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.18;
+}
+
+.book-cta__label {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.2px;
+}
+
+.book-cta__sub {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+/* Slow outward ring — draws the eye once without ever moving the button
+   itself, so it never shifts under a cursor or a tap. */
+.book-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: book-cta-pulse 3s var(--ease) infinite;
+}
+
+@keyframes book-cta-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(var(--c-accent-rgb), 0.5); }
+  60%  { box-shadow: 0 0 0 16px rgba(var(--c-accent-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--c-accent-rgb), 0); }
+}
+
+/* The cookie notice is a full-width bar pinned to the same edge. Rather than
+   stacking two competing calls to action, the corner stack yields until the
+   visitor has answered it. */
+body.cookie-open .book-cta,
+body.cookie-open .scroll-top {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px);
+}
+
+@media (max-width: 600px) {
+  :root {
+    --fab-edge: 16px;
+    --cta-h: 50px;
+  }
+
+  .book-cta {
+    padding: 8px 18px 8px 9px;
+  }
+
+  .book-cta__icon {
+    width: 34px;
+    height: 34px;
+    font-size: 0.95rem;
+  }
+
+  .book-cta__label {
+    font-size: 0.92rem;
+  }
+
+  /* Keeps the pill from crowding the phone's right edge. */
+  .book-cta__sub {
+    display: none;
+  }
 }
 
 /* ===== ANIMATIONS ===== */
@@ -2170,6 +2322,16 @@ summary:focus-visible {
   .fade-in {
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  /* The attention ring and the lift-on-hover are both decorative; the CTA
+     still reads as primary from its colour and shadow alone. */
+  .book-cta::after { animation: none; }
+
+  .book-cta,
+  .book-cta:hover,
+  .book-cta:focus-visible {
+    transform: none;
   }
 
   .gallery__item:hover img,
