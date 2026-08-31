@@ -21,7 +21,7 @@
     "frames:placeholder": "node scripts/generate-frames.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.10",
+    "@biomejs/biome": "^2.5.11",
     "serve": "^14.2.6",
     "typescript": "^7.0.2"
   },
